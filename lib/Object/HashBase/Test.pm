@@ -20,7 +20,7 @@ BEGIN {
 
 return 1 if $NO_RUN;
 
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
 sub warnings(&) {
     my $code = shift;

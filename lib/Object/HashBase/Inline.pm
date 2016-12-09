@@ -3,7 +3,7 @@ use strict;
 use warnings;
 use autodie;
 
-our $VERSION = '0.001';
+our $VERSION = '0.002';
 
 BEGIN { $Object::HashBase::Test::NO_RUN = 1 }
 use Object::HashBase;
