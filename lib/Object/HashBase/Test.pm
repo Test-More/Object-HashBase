@@ -41,7 +41,8 @@ sub exception(&) {
 BEGIN {
     $INC{'Object/HashBase/Test/HBase.pm'} = __FILE__;
 
-    package Object::HashBase::Test::HBase;
+    package
+        Object::HashBase::Test::HBase;
     use Object::HashBase qw/foo bar baz/;
 
     Object::HashBase::Test::is(FOO, 'foo', "FOO CONSTANT");
@@ -50,7 +51,8 @@ BEGIN {
 }
 
 BEGIN {
-    package Object::HashBase::Test::HBaseSub;
+    package
+        Object::HashBase::Test::HBaseSub;
     use base 'Object::HashBase::Test::HBase';
     use Object::HashBase qw/apple pear/;
 
@@ -80,7 +82,8 @@ is_deeply(
 );
 
 BEGIN {
-    package Object::HashBase::Test::Const::Test;
+    package
+        Object::HashBase::Test::Const::Test;
     use Object::HashBase qw/foo/;
 
     sub do_it {
@@ -103,7 +106,8 @@ is($pkg->do_it, 'const', "worked as expected, const was constant");
 BEGIN {
     $INC{'Object/HashBase/Test/HBase/Wrapped.pm'} = __FILE__;
 
-    package Object::HashBase::Test::HBase::Wrapped;
+    package
+        Object::HashBase::Test::HBase::Wrapped;
     use Object::HashBase qw/foo bar/;
 
     my $foo = __PACKAGE__->can('foo');
@@ -118,7 +122,8 @@ BEGIN {
 BEGIN {
     $INC{'Object/HashBase/Test/HBase/Wrapped/Inherit.pm'} = __FILE__;
 
-    package Object::HashBase::Test::HBase::Wrapped::Inherit;
+    package
+        Object::HashBase::Test::HBase::Wrapped::Inherit;
     use base 'Object::HashBase::Test::HBase::Wrapped';
     use Object::HashBase;
 }
@@ -128,7 +133,8 @@ my $foo = $o->foo;
 is($o->bar, 1, 'parent attribute sub not overridden');
 
 {
-    package Foo;
+    package
+        Foo;
 
     sub new;
 
@@ -142,7 +148,8 @@ is(Foo->new, 'foo', "Did not override existing 'new' method");
 BEGIN {
     $INC{'Object/HashBase/Test/HBase2.pm'} = __FILE__;
 
-    package Object::HashBase::Test::HBase2;
+    package
+        Object::HashBase::Test::HBase2;
     use Object::HashBase qw/foo -bar ^baz/;
 
     Object::HashBase::Test::is(FOO, 'foo', "FOO CONSTANT");
