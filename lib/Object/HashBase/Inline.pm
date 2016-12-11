@@ -1,7 +1,6 @@
 package Object::HashBase::Inline;
 use strict;
 use warnings;
-use autodie;
 
 our $VERSION = '0.003';
 
