@@ -52,7 +52,10 @@ use it:
     use warnings;
     use My::Class;
 
-    my $one = My::Class->new(foo => 'MyFoo', bar => 'MyBar');
+    # These are all functionally identical
+    my $one   = My::Class->new(foo => 'MyFoo', bar => 'MyBar');
+    my $two   = My::Class->new({foo => 'MyFoo', bar => 'MyBar'});
+    my $three = My::Class->new(['MyFoo', 'MyBar']);
 
     # Accessors!
     my $foo = $one->foo;    # 'MyFoo'
@@ -104,9 +107,11 @@ If the script was not installed, it can be found int he `scripts/` directory.
 
 ## PROVIDED BY HASH BASE
 
-- $it = $class->new(@VALUES)
+- $it = $class->new(%PAIRS)
+- $it = $class->new(\\%PAIRS)
+- $it = $class->new(\\@ORDERED\_VALUES)
 
-    Create a new instance using key/value pairs.
+    Create a new instance.
 
     HashBase will not export `new()` if there is already a `new()` method in your
     packages inheritance chain.
@@ -128,6 +133,21 @@ If the script was not installed, it can be found int he `scripts/` directory.
     Alternatively you can define the method before loading HashBase instead of just
     declaring it, but that scatters your use statements.
 
+    The most common way to create an object is to pass in key/value pairs where
+    each key is an attribute and each value is what you want assigned to that
+    attribute. No checking is done to verify the attributes or values are valid,
+    you may do that in `init()` if desired.
+
+    If you would like, you can pass in a hashref instead of pairs. When you do so
+    the hashref will be copied, and the copy will be returned blessed as an object.
+    There is no way to ask HashBase to bless a specific hashref.
+
+    In some cases an object may only have 1 or 2 attributes, in which case a
+    hashref may be too verbose for your liking. In these cases you can pass in an
+    arrayref with only values. The values will be assigned to attributes in the
+    order the attributes were listed. When there is inheritence involved the
+    attributes from parent classes will come before subclasses.
+
 ## HOOKS
 
 - $self->init()
@@ -135,7 +155,15 @@ If the script was not installed, it can be found int he `scripts/` directory.
     This gives you the chance to set some default values to your fields. The only
     argument is `$self` with its indexes already set from the constructor.
 
+    **Note:** Object::HashBase checks for an init using `$class->can('init')`
+    during construction. It DOES NOT call `can()` on the created object. Also note
+    that the result of the check is cached, it is only ever checked once, the first
+    time an instance of your class is created. This means that adding an `init()`
+    method AFTER the first construction will result in it being ignored.
+
 # ACCESSORS
+
+## READ/WRITE
 
 To generate accessors you list them when using the module:
 
@@ -160,6 +188,24 @@ This will generate the following subs in your namespace:
     The main reason for using these constants is to help avoid spelling mistakes
     and similar typos. It will not help you if you forget to prefix the '+' though.
 
+## READ ONLY
+
+    use Object::HashBase qw/-foo/;
+
+- set\_foo()
+
+    Throws an exception telling you the attribute is read-only. This is exported to
+    override any active setters for the attribute in a parent class.
+
+## DEPRECATED SETTER
+
+    use Object::HashBase qw/^foo/;
+
+- set\_foo()
+
+    This will set the value, but it will also warn you that the method is
+    deprecated.
+
 # SUBCLASSING
 
 You can subclass an existing HashBase class.
@@ -169,6 +215,22 @@ You can subclass an existing HashBase class.
 
 The base class is added to `@ISA` for you, and all constants from base classes
 are added to subclasses automatically.
+
+# GETTING A LIST OF ATTRIBUTES FOR A CLASS
+
+Object::HashBase provides a function for retrieving a list of attributes for an
+Object::HashBase class.
+
+- @list = Object::HashBase::attr\_list($class)
+- @list = $class->Object::HashBase::attr\_list()
+
+    Either form above will work. This will return a list of attributes defined on
+    the object. This list is returned in the attribute definition order, parent
+    class attributes are listed before subclass attributes. Duplicate attributes
+    will be removed before the list is returned.
+
+    **Note:** This list is used in the `$class->new(\@ARRAY)` constructor to
+    determine the attribute to which each value will be paired.
 
 # SOURCE
 
