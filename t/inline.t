@@ -6,7 +6,7 @@ use Object::HashBase;
 use Object::HashBase::Inline;
 use File::Temp qw/tempdir/;
 
-my $tmp = tempdir(CLEANUP => 1);
+my $tmp = tempdir(CLEANUP => 0);
 chdir($tmp);
 
 Object::HashBase::Inline::inline('My::Prefix');

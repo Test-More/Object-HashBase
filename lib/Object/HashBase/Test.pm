@@ -21,6 +21,7 @@ BEGIN {
 return 1 if $NO_RUN;
 
 our $VERSION = '0.004';
+# <-- START -->
 
 sub warnings(&) {
     my $code = shift;
@@ -108,7 +109,7 @@ BEGIN {
 
     package
         Object::HashBase::Test::HBase::Wrapped;
-    use Object::HashBase qw/foo bar/;
+    use Object::HashBase qw/foo bar dup/;
 
     my $foo = __PACKAGE__->can('foo');
     no warnings 'redefine';
@@ -125,7 +126,7 @@ BEGIN {
     package
         Object::HashBase::Test::HBase::Wrapped::Inherit;
     use base 'Object::HashBase::Test::HBase::Wrapped';
-    use Object::HashBase;
+    use Object::HashBase qw/baz dup/;
 }
 
 my $o = Object::HashBase::Test::HBase::Wrapped::Inherit->new(foo => 1);
@@ -169,6 +170,84 @@ like(exception { $ro->set_bar('xxx') }, qr/'bar' is read-only/, "Cannot set bar"
 
 my $warnings = warnings { is($ro->set_baz('xxx'), 'xxx', 'set baz') };
 like($warnings->[0], qr/set_baz\(\) is deprecated/, "Deprecation warning");
+
+
+
+is_deeply(
+    [Object::HashBase::attr_list('Object::HashBase::Test::HBase::Wrapped::Inherit')],
+    [qw/foo bar dup baz/],
+    "Got a list of attributes in order starting from base class, duplicates removed",
+);
+
+my $x = Object::HashBase::Test::HBase::Wrapped::Inherit->new(foo => 1, baz => 2);
+is($x->foo, 1, "set foo via pairs");
+is($x->baz, 2, "set baz via pairs");
+
+# Now with hashref
+my $y = Object::HashBase::Test::HBase::Wrapped::Inherit->new({foo => 1, baz => 2});
+is($y->foo, 1, "set foo via hashref");
+is($y->baz, 2, "set baz via hashref");
+
+# Now with hashref
+my $z = Object::HashBase::Test::HBase::Wrapped::Inherit->new([
+    1, # foo
+    2, # bar
+    3, # dup
+    4, # baz
+]);
+is($z->foo, 1, "set foo via arrayref");
+is($z->baz, 4, "set baz via arrayref");
+
+like(
+    exception { Object::HashBase::Test::HBase::Wrapped::Inherit->new([1 .. 10]) },
+    qr/Too many arguments for Object::HashBase::Test::HBase::Wrapped::Inherit constructor/,
+    "Too many args in array form"
+);
+
+
+my $CAN_COUNT = 0;
+my $CAN_COUNT2 = 0;
+my $INIT_COUNT = 0;
+BEGIN {
+    $INC{'Object/HashBase/Test/HBase3.pm'} = __FILE__;
+    package
+        Object::HashBase::Test::HBase3;
+    use Object::HashBase qw/foo/;
+
+    sub can {
+        my $self = shift;
+        $CAN_COUNT++;
+        $self->SUPER::can(@_);
+    }
+
+    $INC{'Object/HashBase/Test/HBase4.pm'} = __FILE__;
+    package
+        Object::HashBase::Test::HBase4;
+    use Object::HashBase qw/foo/;
+
+    sub can {
+        my $self = shift;
+        $CAN_COUNT2++;
+        $self->SUPER::can(@_);
+    }
+
+    sub init { $INIT_COUNT++ }
+}
+
+is($CAN_COUNT, 0, "->can has not been called yet");
+my $it = Object::HashBase::Test::HBase3->new;
+is($CAN_COUNT, 1, "->can has been called once to check for init");
+$it = Object::HashBase::Test::HBase3->new;
+is($CAN_COUNT, 1, "->can was not called again, we cached it");
+
+is($CAN_COUNT2, 0, "->can has not been called yet");
+is($INIT_COUNT, 0, "->init has not been called yet");
+$it = Object::HashBase::Test::HBase4->new;
+is($CAN_COUNT2, 1, "->can has been called once to check for init");
+is($INIT_COUNT, 1, "->init has been called once");
+$it = Object::HashBase::Test::HBase4->new;
+is($CAN_COUNT2, 1, "->can was not called again, we cached it");
+is($INIT_COUNT, 2, "->init has been called again");
 
 done_testing;
 

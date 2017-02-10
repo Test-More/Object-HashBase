@@ -51,6 +51,9 @@ use warnings;
     no warnings 'once';
     \$$prefix\::HashBase::VERSION = '$Object::HashBase::VERSION';
     \*$prefix\::HashBase::ATTR_SUBS = \\\%Object::HashBase::ATTR_SUBS;
+    \*$prefix\::HashBase::ATTR_LIST = \\\%Object::HashBase::ATTR_LIST;
+    \*$prefix\::HashBase::VERSION   = \\\%Object::HashBase::VERSION;
+    \*$prefix\::HashBase::CAN_CACHE = \\\%Object::HashBase::CAN_CACHE;
 }
 
     EOT
@@ -65,7 +68,7 @@ use Test::More;
 
     my $writing = 0;
     while (my $line = <$hin>) {
-        if ($line =~ m/VERSION/) {
+        if ($line =~ m/<-- START -->/) {
             $writing = 1;
             next;
         }
@@ -90,12 +93,13 @@ script.
         next unless $writing;
 
         $line =~ s/\QObject::\E/$prefix\::/g;
+
         print $hbf $line;
     }
 
     $writing = 0;
     while (my $line = <$tin>) {
-        if ($line =~ m/VERSION/) {
+        if ($line =~ m/<-- START -->/) {
             $writing = 1;
             next;
         }
