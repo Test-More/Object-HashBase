@@ -145,7 +145,7 @@ If the script was not installed, it can be found int he `scripts/` directory.
     In some cases an object may only have 1 or 2 attributes, in which case a
     hashref may be too verbose for your liking. In these cases you can pass in an
     arrayref with only values. The values will be assigned to attributes in the
-    order the attributes were listed. When there is inheritence involved the
+    order the attributes were listed. When there is inheritance involved the
     attributes from parent classes will come before subclasses.
 
 ## HOOKS

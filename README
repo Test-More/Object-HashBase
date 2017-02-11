@@ -151,7 +151,7 @@ METHODS
       case a hashref may be too verbose for your liking. In these cases you
       can pass in an arrayref with only values. The values will be assigned
       to attributes in the order the attributes were listed. When there is
-      inheritence involved the attributes from parent classes will come
+      inheritance involved the attributes from parent classes will come
       before subclasses.
 
  HOOKS
