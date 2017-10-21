@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+    - Allow custom module versions in inlined copies
+
 0.005     2017-02-10 21:46:32-08:00 America/Los_Angeles
 
     - Spelling fix in POD
