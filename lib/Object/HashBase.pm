@@ -260,7 +260,7 @@ C<Object::HashBase>.
 You can re-run this script to regenerate the files, or upgrade them to newer
 versions.
 
-If the script was not installed, it can be found int he C<scripts/> directory.
+If the script was not installed, it can be found in the C<scripts/> directory.
 
 =head1 METHODS
 
