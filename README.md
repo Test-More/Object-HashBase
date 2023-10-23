@@ -126,7 +126,7 @@ If the script was not installed, it can be found in the `scripts/` directory.
     packages inheritance chain.
 
     **If you do not want this method you can define your own** you just have to
-    declare it before loading [Object::HashBase](https://metacpan.org/pod/Object::HashBase).
+    declare it before loading [Object::HashBase](https://metacpan.org/pod/Object%3A%3AHashBase).
 
         package My::Package;
 
