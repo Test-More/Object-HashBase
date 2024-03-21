@@ -82,7 +82,7 @@ use Test::More;
         if ($line =~ m/^=head1 INCLUDING IN YOUR DIST$/) {
             $writing = 0;
             print $hbf <<"            EOT";
-=head1 THIS IS A BUNDLED COPY OF HASHBASE
+\=head1 THIS IS A BUNDLED COPY OF HASHBASE
 
 This is a bundled copy of L<Object::HashBase>. This file was generated using
 the
