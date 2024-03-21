@@ -2,7 +2,7 @@ package Object::HashBase;
 use strict;
 use warnings;
 
-our $VERSION = '0.012';
+our $VERSION = '0.013';
 our $HB_VERSION = $VERSION;
 # The next line is for inlining
 # <-- START -->
