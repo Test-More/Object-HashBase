@@ -243,6 +243,7 @@ A class:
     }
 
     sub print {
+        my $self = shift;
         print join ", " => map { $self->{$_} } FOO, BAR, BAZ, BAT, BAN, BOO;
     }
 
