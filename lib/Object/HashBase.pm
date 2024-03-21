@@ -14,11 +14,15 @@ require Carp;
 }
 
 BEGIN {
-    if (eval { require Class::XSAccessor; Class::XSAccessor->VERSION(1.19); 1 }) {
-        *CLASS_XS_ACCESSOR = sub() { 1 }
-    }
-    else {
-        *CLASS_XS_ACCESSOR = sub() { 0 }
+    {
+        # Make sure none of these get messed up.
+        local ($SIG{__DIE__}, $@, $?, $!, $^E);
+        if (eval { require Class::XSAccessor; Class::XSAccessor->VERSION(1.19); 1 }) {
+            *CLASS_XS_ACCESSOR = sub() { 1 }
+        }
+        else {
+            *CLASS_XS_ACCESSOR = sub() { 0 }
+        }
     }
 
     # these are not strictly equivalent, but for out use we don't care
