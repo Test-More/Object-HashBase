@@ -192,4 +192,24 @@ BEGIN {
     like($err, qr/'My::NoHBRole' does not use Object::HashBase/, 'role without HashBase croaks');
 }
 
+# Auto-load Role::Tiny: simulate by checking it loads on demand.
+# We can't fully simulate "Role::Tiny not loaded" in a process that already
+# loaded it via the role definitions above, but we can verify the require
+# path works by ensuring no croak when consumer omits `use Role::Tiny::With;`.
+BEGIN {
+    package My::AutoRole;
+    use Role::Tiny;
+    use Object::HashBase qw/auto/;
+    $INC{'My/AutoRole.pm'} = __FILE__;
+}
+
+BEGIN {
+    package My::AutoConsumer;
+    # No `use Role::Tiny` here — Object::HashBase auto-loads it for &
+    use Object::HashBase qw/&My::AutoRole/;
+}
+
+ok(Role::Tiny::does_role('My::AutoConsumer', 'My::AutoRole'),
+    'consumer composed role without explicitly loading Role::Tiny');
+
 done_testing;
