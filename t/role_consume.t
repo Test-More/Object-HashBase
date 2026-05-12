@@ -149,4 +149,47 @@ ok(Role::Tiny::does_role('My::ReqConsumer', 'My::ReqRole'),
     'required method satisfied by later-defined sub');
 is(My::ReqConsumer->new->must_have, 'present', 'required method callable');
 
+# Non-existent role
+{
+    my $err;
+    eval q{
+        package My::BadRoleConsumer;
+        use Object::HashBase '&Bogus::Role::Name';
+        1;
+    } or $err = $@;
+    like($err, qr/Could not load role 'Bogus::Role::Name'/, 'non-existent role croaks');
+}
+
+# Plain class (not a Role::Tiny role)
+BEGIN {
+    package My::PlainClass;
+    use Object::HashBase qw/pcattr/;
+    $INC{'My/PlainClass.pm'} = __FILE__;
+}
+{
+    my $err;
+    eval q{
+        package My::BadConsumer1;
+        use Object::HashBase '&My::PlainClass';
+        1;
+    } or $err = $@;
+    like($err, qr/'My::PlainClass' is not a Role::Tiny role/, 'plain class as role croaks');
+}
+
+# Role without Object::HashBase
+BEGIN {
+    package My::NoHBRole;
+    use Role::Tiny;
+    $INC{'My/NoHBRole.pm'} = __FILE__;
+}
+{
+    my $err;
+    eval q{
+        package My::BadConsumer2;
+        use Object::HashBase '&My::NoHBRole';
+        1;
+    } or $err = $@;
+    like($err, qr/'My::NoHBRole' does not use Object::HashBase/, 'role without HashBase croaks');
+}
+
 done_testing;
