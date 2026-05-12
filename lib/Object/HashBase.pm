@@ -38,6 +38,12 @@ BEGIN {
     }
 }
 
+sub _is_role {
+    my $pkg = shift;
+    return 0 unless $INC{'Role/Tiny.pm'};
+    return Role::Tiny->is_role($pkg) ? 1 : 0;
+}
+
 my %SPEC = (
     '^' => {reader => 1, writer => 0, dep_writer => 1, read_only => 0, strip => 1},
     '-' => {reader => 1, writer => 0, dep_writer => 0, read_only => 1, strip => 1},
@@ -94,9 +100,9 @@ sub do_import {
     my @pre_init;
     my @post_init;
 
-    my $add_new = 1;
+    my $add_new = _is_role($into) ? 0 : 1;
 
-    if (my $have_new = $into->can('new')) {
+    if ($add_new && (my $have_new = $into->can('new'))) {
         my $new_lookup = $Object::HashBase::NEW_LOOKUP //= {};
         $add_new = 0 unless $new_lookup->{$have_new};
     }
