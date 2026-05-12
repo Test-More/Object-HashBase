@@ -63,6 +63,30 @@ sub do_import {
     my $ver = $Object::HashBase::HB_VERSION || $Object::HashBase::VERSION;
     $Object::HashBase::VERSION{$into} = $ver if !$Object::HashBase::VERSION{$into} || $Object::HashBase::VERSION{$into} > $ver;
 
+    my (@parents, @attrs);
+    for my $arg (@_) {
+        if (defined($arg) && length($arg) && substr($arg, 0, 1) eq '@') {
+            push @parents, substr($arg, 1);
+        }
+        else {
+            push @attrs, $arg;
+        }
+    }
+
+    for my $parent (@parents) {
+        my $pm = $parent;
+        $pm =~ s{::}{/}g;
+        $pm .= '.pm';
+        unless ($INC{$pm}) {
+            local ($@);
+            unless (eval { require $pm; 1 }) {
+                Carp::croak("Could not load parent class '$parent': $@");
+            }
+        }
+        no strict 'refs';
+        push @{"$into\::ISA"}, $parent unless grep { $_ eq $parent } @{"$into\::ISA"};
+    }
+
     my $isa = _isa($into);
     my $attr_list = $Object::HashBase::ATTR_LIST{$into} ||= [];
     my $attr_subs = $Object::HashBase::ATTR_SUBS{$into} ||= {};
@@ -80,7 +104,7 @@ sub do_import {
     my %subs = (
         ($add_new ? ($class->_build_new($into, \@pre_init, \@post_init)) : ()),
         (map %{$Object::HashBase::ATTR_SUBS{$_} || {}}, @{$isa}[1 .. $#$isa]),
-        ($class->args_to_subs($attr_list, $attr_subs, \@_, $into)),
+        ($class->args_to_subs($attr_list, $attr_subs, \@attrs, $into)),
     );
 
     no strict 'refs';
