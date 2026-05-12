@@ -69,14 +69,20 @@ sub do_import {
     my $ver = $Object::HashBase::HB_VERSION || $Object::HashBase::VERSION;
     $Object::HashBase::VERSION{$into} = $ver if !$Object::HashBase::VERSION{$into} || $Object::HashBase::VERSION{$into} > $ver;
 
-    my (@parents, @attrs);
+    my (@parents, @roles, @attrs);
     for my $arg (@_) {
-        if (defined($arg) && length($arg) && substr($arg, 0, 1) eq '@') {
-            push @parents, substr($arg, 1);
+        if (defined($arg) && length($arg)) {
+            my $p = substr($arg, 0, 1);
+            if ($p eq '@') {
+                push @parents, substr($arg, 1);
+                next;
+            }
+            if ($p eq '&') {
+                push @roles, substr($arg, 1);
+                next;
+            }
         }
-        else {
-            push @attrs, $arg;
-        }
+        push @attrs, $arg;
     }
 
     for my $parent (@parents) {
@@ -122,6 +128,49 @@ sub do_import {
             my ($sub, @args) = @$v;
             $sub->(@args);
         }
+    }
+
+    if (@roles) {
+        Carp::croak("Object::HashBase '&' role prefix requires Perl 5.010 or newer (this is $])")
+            if $] < 5.010;
+
+        unless ($INC{'Role/Tiny.pm'}) {
+            local ($@);
+            unless (eval { require Role::Tiny; 1 }) {
+                Carp::croak("Object::HashBase '&' role prefix requires Role::Tiny but it could not be loaded: $@");
+            }
+        }
+
+        unless (Role::Tiny->can('is_role')) {
+            Carp::croak("Object::HashBase '&' role prefix requires Role::Tiny 1.003000 or newer (is_role missing)");
+        }
+
+        for my $role (@roles) {
+            my $pm = $role;
+            $pm =~ s{::}{/}g;
+            $pm .= '.pm';
+            unless ($INC{$pm}) {
+                local ($@);
+                unless (eval { require $pm; 1 }) {
+                    Carp::croak("Could not load role '$role': $@");
+                }
+            }
+            Carp::croak("'$role' is not a Role::Tiny role")
+                unless Role::Tiny->is_role($role);
+            my $role_subs = $Object::HashBase::ATTR_SUBS{$role};
+            Carp::croak("'$role' does not use Object::HashBase")
+                unless $role_subs && %$role_subs;
+
+            no strict 'refs';
+            for my $const (keys %$role_subs) {
+                next if defined &{"$into\::$const"};   # keep existing sub, no override, no warn
+                *{"$into\::$const"} = $role_subs->{$const};
+            }
+        }
+
+        my $key = "Object::HashBase::role_applier::$into";
+        my $applier = $^H{$key} ||= Object::HashBase::_RoleApplier->new($into);
+        $applier->add($_) for @roles;
     }
 }
 
@@ -278,6 +327,26 @@ sub _build_new {
     }
 
     return %out;
+}
+
+package    # hide from PAUSE indexer
+    Object::HashBase::_RoleApplier;
+
+sub new {
+    my ($class, $into) = @_;
+    return bless { into => $into, roles => [] }, $class;
+}
+
+sub add {
+    my ($self, $role) = @_;
+    push @{$self->{roles}}, $role
+        unless grep { $_ eq $role } @{$self->{roles}};
+}
+
+sub DESTROY {
+    my $self = shift;
+    return unless @{$self->{roles}};
+    Role::Tiny->apply_roles_to_package($self->{into}, @{$self->{roles}});
 }
 
 1;

@@ -1,0 +1,39 @@
+use strict;
+use warnings;
+use Test::More;
+
+BEGIN {
+    eval { require Role::Tiny; 1 } or plan skip_all => 'Role::Tiny required';
+    plan skip_all => "& prefix requires perl 5.10+" if $] < 5.010;
+}
+
+BEGIN {
+    package My::CRole;
+    use Role::Tiny;
+    use Object::HashBase qw/cr/;
+    $INC{'My/CRole.pm'} = __FILE__;
+}
+
+# Consumer uses +CR constant at compile time — must resolve
+BEGIN {
+    package My::CClass;
+    use Object::HashBase qw/&My::CRole own/;
+
+    sub uses_constants {
+        my $self = shift;
+        return [ $self->{+CR}, $self->{+OWN} ];
+    }
+}
+
+ok(Role::Tiny::does_role('My::CClass', 'My::CRole'), 'role composed into consumer');
+
+can_ok('My::CClass', qw/CR OWN cr own set_cr set_own new uses_constants/);
+is(My::CClass::CR(), 'cr', 'CR constant copied to consumer');
+is(My::CClass::OWN(), 'own', 'OWN constant');
+
+my $obj = My::CClass->new(cr => 'role-val', own => 'own-val');
+is($obj->cr, 'role-val', 'role accessor works on consumer instance');
+is($obj->own, 'own-val', 'own accessor works');
+is_deeply($obj->uses_constants, ['role-val', 'own-val'], '+CONSTANT resolves at compile in consumer sub');
+
+done_testing;
