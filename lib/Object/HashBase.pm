@@ -157,9 +157,9 @@ sub do_import {
             }
             Carp::croak("'$role' is not a Role::Tiny role")
                 unless Role::Tiny->is_role($role);
-            my $role_subs = $Object::HashBase::ATTR_SUBS{$role};
+            my $role_subs = $Object::HashBase::ATTR_SUBS{$role} || {};
             Carp::croak("'$role' does not use Object::HashBase")
-                unless $role_subs && %$role_subs;
+                unless exists $Object::HashBase::VERSION{$role};
 
             no strict 'refs';
             for my $const (keys %$role_subs) {
@@ -329,6 +329,14 @@ sub _build_new {
     return %out;
 }
 
+# _RoleApplier — deferred Role::Tiny composition.
+#
+# Object::HashBase's '&' import prefix copies role constants into the consumer
+# eagerly (so `$self->{+FOO}` resolves at compile time), then defers actual
+# Role::Tiny->apply_roles_to_package to end of consumer's compile scope by
+# storing a blessed object in %^H. Perl destroys %^H entries at end of compile
+# scope, triggering DESTROY here, which finally composes the role(s).
+
 package    # hide from PAUSE indexer
     Object::HashBase::_RoleApplier;
 
@@ -346,7 +354,14 @@ sub add {
 sub DESTROY {
     my $self = shift;
     return unless @{$self->{roles}};
-    Role::Tiny->apply_roles_to_package($self->{into}, @{$self->{roles}});
+    local $@;
+    my $ok = eval { Role::Tiny->apply_roles_to_package($self->{into}, @{$self->{roles}}); 1 };
+    unless ($ok) {
+        my $err = $@ || 'unknown error';
+        my $into = $self->{into};
+        my $roles = join(', ', @{$self->{roles}});
+        warn "Object::HashBase: failed to compose role(s) [$roles] into $into: $err";
+    }
 }
 
 1;
