@@ -66,4 +66,22 @@ is(My::ConflictConsumer::CFLICT(), 'overridden-value',
     is_deeply(\@warns, [], 'no warnings on silent conflict');
 }
 
+# attr_list includes role attrs for array-form constructor
+{
+    my @attrs = Object::HashBase::attr_list('My::CClass');
+    is_deeply(
+        [ sort @attrs ],
+        [ sort qw/cr own/ ],
+        'attr_list includes role + own attrs'
+    );
+
+    # Array-form constructor uses ordered attr_list
+    # Order: role attrs first (composed earlier), then own
+    my @ordered = Object::HashBase::attr_list('My::CClass');
+    my $obj = My::CClass->new([ map { "v_$_" } @ordered ]);
+    for my $a (@ordered) {
+        is($obj->{$a}, "v_$a", "array-form set $a from attr_list order");
+    }
+}
+
 done_testing;

@@ -166,6 +166,9 @@ sub do_import {
                 next if defined &{"$into\::$const"};   # keep existing sub, no override, no warn
                 *{"$into\::$const"} = $role_subs->{$const};
             }
+
+            my $role_attr_list = $Object::HashBase::ATTR_LIST{$role} || [];
+            push @{$Object::HashBase::ROLE_ATTRS{$into} ||= []}, @$role_attr_list;
         }
 
         my $key = "Object::HashBase::role_applier::$into";
@@ -241,19 +244,18 @@ sub attr_list {
     my $isa = _isa($class);
 
     my %seen;
-    my @list = grep { !$seen{$_}++ } map {
-        my @out;
-
-        if (0.004 > ($Object::HashBase::VERSION{$_} || 0)) {
-            Carp::carp("$_ uses an inlined version of Object::HashBase too old to support attr_list()");
+    my @list;
+    for my $pkg (reverse @$isa) {
+        if (0.004 > ($Object::HashBase::VERSION{$pkg} || 0)) {
+            Carp::carp("$pkg uses an inlined version of Object::HashBase too old to support attr_list()");
+            next;
         }
-        else {
-            my $list = $Object::HashBase::ATTR_LIST{$_};
-            @out = $list ? @$list : ()
+        my $own = $Object::HashBase::ATTR_LIST{$pkg};
+        my $role_attrs = $Object::HashBase::ROLE_ATTRS{$pkg} || [];
+        for my $a (@$role_attrs, ($own ? @$own : ())) {
+            push @list, $a unless $seen{$a}++;
         }
-
-        @out;
-    } reverse @$isa;
+    }
 
     return @list;
 }
