@@ -84,4 +84,69 @@ is(My::ConflictConsumer::CFLICT(), 'overridden-value',
     }
 }
 
+# Multiple roles composed at once
+BEGIN {
+    package My::RA;
+    use Role::Tiny;
+    use Object::HashBase qw/ra_attr/;
+    sub ra_method { 'RA' }
+    $INC{'My/RA.pm'} = __FILE__;
+
+    package My::RB;
+    use Role::Tiny;
+    use Object::HashBase qw/rb_attr/;
+    sub rb_method { 'RB' }
+    $INC{'My/RB.pm'} = __FILE__;
+}
+
+BEGIN {
+    package My::Multi;
+    use Object::HashBase qw/&My::RA &My::RB own_attr/;
+}
+
+ok(Role::Tiny::does_role('My::Multi', 'My::RA'), 'role RA composed');
+ok(Role::Tiny::does_role('My::Multi', 'My::RB'), 'role RB composed');
+is(My::Multi->new->ra_method, 'RA', 'RA method');
+is(My::Multi->new->rb_method, 'RB', 'RB method');
+
+# Method modifier (around) sees consumer method (deferred compose)
+BEGIN {
+    package My::AroundRole;
+    use Role::Tiny;
+    use Object::HashBase qw/wrapped/;
+    around 'do_it' => sub {
+        my ($orig, $self, @args) = @_;
+        return "wrapped(" . $self->$orig(@args) . ")";
+    };
+    $INC{'My/AroundRole.pm'} = __FILE__;
+}
+
+BEGIN {
+    package My::AroundConsumer;
+    use Object::HashBase qw/&My::AroundRole/;
+    sub do_it { 'inner' }
+}
+
+is(My::AroundConsumer->new->do_it, 'wrapped(inner)',
+    'around modifier wraps consumer method (deferred compose worked)');
+
+# Required method satisfied by consumer's later sub
+BEGIN {
+    package My::ReqRole;
+    use Role::Tiny;
+    use Object::HashBase qw/req_attr/;
+    requires 'must_have';
+    $INC{'My/ReqRole.pm'} = __FILE__;
+}
+
+BEGIN {
+    package My::ReqConsumer;
+    use Object::HashBase qw/&My::ReqRole/;
+    sub must_have { 'present' }
+}
+
+ok(Role::Tiny::does_role('My::ReqConsumer', 'My::ReqRole'),
+    'required method satisfied by later-defined sub');
+is(My::ReqConsumer->new->must_have, 'present', 'required method callable');
+
 done_testing;
