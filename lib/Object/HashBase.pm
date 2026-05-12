@@ -149,17 +149,21 @@ sub do_import {
             my $pm = $role;
             $pm =~ s{::}{/}g;
             $pm .= '.pm';
+
             unless ($INC{$pm}) {
                 local ($@);
                 unless (eval { require $pm; 1 }) {
                     Carp::croak("Could not load role '$role': $@");
                 }
             }
+
             Carp::croak("'$role' is not a Role::Tiny role")
                 unless Role::Tiny->is_role($role);
-            my $role_subs = $Object::HashBase::ATTR_SUBS{$role} || {};
+
             Carp::croak("'$role' does not use Object::HashBase")
                 unless exists $Object::HashBase::VERSION{$role};
+
+            my $role_subs = $Object::HashBase::ATTR_SUBS{$role} || {};
 
             no strict 'refs';
             for my $const (keys %$role_subs) {
