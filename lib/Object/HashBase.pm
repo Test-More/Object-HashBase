@@ -792,6 +792,12 @@ skips injection of C<new()>, C<add_pre_init>, C<add_post_init>,
 C<_pre_init>, and C<_post_init>. Only accessor methods and constants are
 installed.
 
+B<Important:> C<use Role::Tiny;> must appear B<before> C<use Object::HashBase>
+in the role package. Object::HashBase detects the role status of the target
+package at import time; if Role::Tiny has not yet been loaded, the target
+will be treated as a plain class and C<new()> and the init hooks will be
+injected.
+
 Consumers compose the role with the C<&> prefix (recommended) or with a
 direct C<with()> call. The C<&> prefix copies the role's constants into the
 consumer at compile time, which is required for the C<< $self->{+FOO} >>

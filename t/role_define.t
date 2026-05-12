@@ -23,5 +23,7 @@ is(My::HBRole::RB(), 'rb', 'RB constant');
 ok(!My::HBRole->can('new'),           'role has no new()');
 ok(!My::HBRole->can('add_pre_init'),  'role has no add_pre_init');
 ok(!My::HBRole->can('add_post_init'), 'role has no add_post_init');
+ok(!My::HBRole->can('_pre_init'),     'role has no _pre_init');
+ok(!My::HBRole->can('_post_init'),    'role has no _post_init');
 
 done_testing;
