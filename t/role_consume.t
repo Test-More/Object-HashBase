@@ -36,4 +36,34 @@ is($obj->cr, 'role-val', 'role accessor works on consumer instance');
 is($obj->own, 'own-val', 'own accessor works');
 is_deeply($obj->uses_constants, ['role-val', 'own-val'], '+CONSTANT resolves at compile in consumer sub');
 
+# Conflict: consumer already has CR sub before & prefix processed
+BEGIN {
+    package My::ConflictRole;
+    use Role::Tiny;
+    use Object::HashBase qw/cflict/;
+    $INC{'My/ConflictRole.pm'} = __FILE__;
+}
+
+BEGIN {
+    package My::ConflictConsumer;
+    sub CFLICT { 'overridden-value' }
+    use Object::HashBase qw/&My::ConflictRole/;
+}
+
+is(My::ConflictConsumer::CFLICT(), 'overridden-value',
+    'existing sub kept, role constant not copied over it');
+
+# No warnings emitted
+{
+    my @warns;
+    local $SIG{__WARN__} = sub { push @warns, @_ };
+    eval q{
+        package My::SilentConflict;
+        sub CFLICT { 'mine' }
+        use Object::HashBase qw/&My::ConflictRole/;
+        1;
+    } or do { fail("compile failed: $@") };
+    is_deeply(\@warns, [], 'no warnings on silent conflict');
+}
+
 done_testing;
